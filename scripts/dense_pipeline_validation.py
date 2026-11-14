@@ -4,6 +4,20 @@ import hashlib
 import numpy as np
 
 
+def chart_depth_masks(charts):
+    """Data validity in the upstream SfM scale, without camera clip bounds.
+
+    Upstream restores chart coordinates by dividing by scale_factor and does
+    not discard depths above Camera.zfar. Visibility belongs to the renderer.
+    """
+    scale = float(charts['scale_factor'])
+    depth = charts['depths'] / scale
+    prior = charts['prior_depths'] / scale
+    return (np.isfinite(depth) & (depth > 0)
+            & np.isfinite(charts['pts']).all(-1),
+            np.isfinite(prior) & (prior > 0))
+
+
 def file_hash(path):
     value = hashlib.sha256()
     with path.open('rb') as stream:
@@ -42,8 +56,8 @@ def validate_training_inputs(config, args, charts, chart_manifest, dense_manifes
         raise ValueError('Chart geometry/priors/confidence shapes disagree')
     if not np.isfinite(charts['confs']).all():
         raise ValueError('Nonfinite chart confidence')
-    for key in ('depths', 'prior_depths'):
-        depth = charts[key]/float(scale)
-        valid = np.isfinite(depth) & (depth > .01) & (depth < 100.)
-        if np.any(~valid.reshape(len(names), -1).any(1)):
-            raise ValueError(f'A chart has no valid {key} in the camera range 0.01–100')
+    for key, valid in zip(('depths', 'prior_depths'), chart_depth_masks(charts)):
+        bad = np.flatnonzero(~valid.reshape(len(names), -1).any(1))
+        if len(bad):
+            raise ValueError(f'No finite positive {key}: '
+                             + ', '.join(names[i] for i in bad))

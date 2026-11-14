@@ -62,12 +62,10 @@ def load_cameras(scene_path, model_args):
     return cameras, info.point_cloud, info.nerf_normalization["radius"], camera_json
 
 
-def chart_valid_masks(data, far):
-    scale = float(data["scale_factor"])
-    depth, prior = data["depths"] / scale, data["prior_depths"] / scale
-    geometry = np.isfinite(depth) & (depth > .01) & (depth < far) & np.isfinite(data["pts"]).all(-1)
-    prior_valid = np.isfinite(prior) & (prior > .01) & (prior < far)
-    return geometry, prior_valid
+def chart_valid_masks(data, far=None):
+    # Retain the legacy argument for callers; zfar is not a visibility cutoff.
+    from dense_pipeline_validation import chart_depth_masks
+    return chart_depth_masks(data)
 
 
 def initialize_all(gaussians, charts, chart_cameras, point_cloud, extent, valid):

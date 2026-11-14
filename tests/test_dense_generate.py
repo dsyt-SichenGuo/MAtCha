@@ -146,6 +146,39 @@ class DenseGenerateTests(unittest.TestCase):
         charts['depths'][0]=-1
         with self.assertRaises(ValueError): validate_training_inputs(config,args,charts,manifest,manifest)
 
+    def test_chart_scale_matches_upstream_without_far_clipping(self):
+        # Chart alignment saved normalized depths, but stage 3 must consume
+        # their original SfM scale, even when depths exceed Camera.zfar=100.
+        scale = .0017412
+        shape = (2, 2, 3)
+        charts = dict(depths=np.full(shape, 5.), prior_depths=np.full(shape, 6.),
+                      confs=np.ones(shape), pts=np.ones(shape+(3,)),
+                      scale_factor=np.array(scale))
+        original = {k: v.copy() for k, v in charts.items()}
+        config = dict(chart_every=20, generated_rgb_weight=1.,
+                      save_iterations=[7], checkpoint_iterations=[5])
+        args = argparse.Namespace(iterations=40, densification_interval=100,
+                                  opacity_reset_interval=3000)
+        manifest = dict(frames=[dict(name=n, source_type='generated')
+                                for n in ['a.png', 'b.png']])
+        validate_training_inputs(config, args, charts, manifest, manifest)
+        valid, prior_valid = chart_valid_masks(charts, 100.)
+        self.assertTrue(valid.all())
+        self.assertTrue(prior_valid.all())
+        # Input checks must not apply a near-plane visibility rule either.
+        charts['depths'][0, 0, 0] = .001 * scale
+        self.assertTrue(chart_valid_masks(charts)[0][0, 0, 0])
+        charts['depths'][0, 0, 0] = original['depths'][0, 0, 0]
+        for key in charts:
+            np.testing.assert_array_equal(charts[key], original[key])
+        charts['pts'][0] = np.nan
+        with self.assertRaisesRegex(ValueError, 'a.png'):
+            validate_training_inputs(config, args, charts, manifest, manifest)
+        charts['pts'] = original['pts']
+        charts['prior_depths'][1] = np.inf
+        with self.assertRaisesRegex(ValueError, 'b.png'):
+            validate_training_inputs(config, args, charts, manifest, manifest)
+
 
     def test_streamed_ply_preserves_sh_order_and_mip(self):
         import torch

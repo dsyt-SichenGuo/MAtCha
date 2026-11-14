@@ -121,7 +121,7 @@ def main():
                source_counts=dict(generated=len(dense_cameras)), chart_counts=dict(generated=len(chart_cameras)))
     run["arguments"] = {k: str(v) if isinstance(v,Path) else v for k,v in vars(args).items()}
     (output/"run_config.json").write_text(json.dumps(run, indent=2)+"\n")
-    valid, prior_valid = chart_valid_masks(charts, chart_cameras[0].zfar)
+    valid, prior_valid = chart_valid_masks(charts)
     invalid_report = [dict(name=n, invalid_geometry_fraction=float((~valid[i]).mean()),
                       invalid_prior_fraction=float((~prior_valid[i]).mean())) for i,n in enumerate(chart_names)]
     (output/"chart_validity.json").write_text(json.dumps(invalid_report, indent=2)+"\n")

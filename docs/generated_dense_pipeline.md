@@ -128,9 +128,15 @@ Defaults:
 | Recoverable checkpoint | Every 5000 steps through 30000, and final step |
 
 Chart images also remain eligible for dense RGB steps. A dense step samples one
-image, not a batch containing every image. Chart geometry outside camera range
-0.01–100 or nonfinite is excluded together with corresponding supervision;
-this is a validity mask, not a point budget. Use a consistent image/pointmap shape across a scene, as required by upstream
+image, not a batch containing every image. As in the original pipeline, chart
+alignment normalizes its working coordinates and saves `scale_factor`; training
+divides chart points and depths by that factor to recover the original SfM scale.
+Dense points and camera translations retain their original SfM coordinates.
+No additional training-time normalization is applied. Chart masks exclude
+nonfinite geometry and nonpositive depths, with the same rule used by validation
+and training. Depths above `100` remain valid: `Camera.zfar` is not a hard far
+visibility cutoff in the upstream CUDA rasterizer. Visibility is handled by the
+renderer, not by the data validator. Use a consistent image/pointmap shape across a scene, as required by upstream
 parallel chart alignment. RGB sources need not be 1280x960:
 no resizing is introduced and no fixed image/pointmap dimensions are assumed.
 All-view initialization can still exceed GPU capacity; this branch does not
