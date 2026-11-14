@@ -289,9 +289,9 @@ def get_pointmap_from_sfm_data_with_depthanything(
         frame_interval = 1
     else:
         n_total_images = len(pointmap_cameras)
-        frame_interval = n_total_images // (n_images_in_pointmap - 1)
-        
-        image_indices = [_k * frame_interval for _k in range(n_images_in_pointmap)]
+        if not 1 <= n_images_in_pointmap <= n_total_images:
+            raise ValueError('Requested depth image count is outside the available range')
+        image_indices = np.linspace(0, n_total_images - 1, n_images_in_pointmap, dtype=int).tolist()
         n_images_in_pointmap = len(image_indices)
         
         n_total_images = len(image_indices)

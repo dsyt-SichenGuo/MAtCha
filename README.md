@@ -493,3 +493,11 @@ We would like to thank the authors of the following projects for their awesome w
 - <a href="https://depth-anything-v2.github.io/">DepthAnythingV2</a>: We use DepthAnythingV2 to initialize the charts.
 - <a href="https://surfsplatting.github.io/">2D Gaussian Splatting</a>: We use 2D Gaussian Splatting to refine the charts with a differentiable renderer.
 - <a href="https://niujinshuchong.github.io/gaussian-opacity-fields/">Gaussian Opacity Fields</a>: We adapted the tetrahedralization method from Gaussian Opacity Fields to extract a mesh from our representation.
+
+
+## Generated-image dense reconstruction
+
+For all-image MASt3R SfM, preselected-keyframe chart alignment, and all-image
+dense Gaussian training, see [the reusable three-stage pipeline](docs/generated_dense_pipeline.md).
+The `dense_generate` branch provides scene-independent entry points and a shared
+training YAML; the original reconstruction commands remain available.
